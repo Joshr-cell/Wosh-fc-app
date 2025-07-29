@@ -1,82 +1,122 @@
-# app.py
+# Wosh FC Analyzer App (Inspired by FIFA Gameplay Style)
+
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from PIL import Image
 
 st.set_page_config(page_title="Wosh FC Analyzer", layout="wide")
 
-st.title("⚽ Wosh FC Player Analyzer Dashboard")
+# ---------- Sidebar Navigation ----------
+with st.sidebar:
+    st.title("Wosh FC Dashboard")
+    section = st.radio("Navigate", [
+        "Home", "Player Profiles", "Training & Drills", "Match Analysis", "Tactical Board", "Video Module", "Game Statistics"
+    ])
 
-# Sidebar navigation
-menu = st.sidebar.radio("Navigation", [
-    "Overview", "Players", "Training Drills", "Match Analysis", "Tactical Board", "Video Module"
-])
-
-# Dummy player data setup (replace with Firebase or database later)
-players = {
-    "Under 7": [{"Name": f"Player U7-{i+1}", "Captain": (i==0), "Strength": 65+i, "Ambition": 70+i, "Improvement": 50+i} for i in range(35)],
-    "Under 10": [{"Name": f"Player U10-{i+1}", "Captain": (i==0), "Strength": 67+i, "Ambition": 72+i, "Improvement": 52+i} for i in range(35)],
-    "Under 12": [{"Name": f"Player U12-{i+1}", "Captain": (i==0), "Strength": 69+i, "Ambition": 74+i, "Improvement": 54+i} for i in range(35)],
-    "Under 14": [{"Name": f"Player U14-{i+1}", "Captain": (i==0), "Strength": 71+i, "Ambition": 76+i, "Improvement": 56+i} for i in range(35)],
-    "Under 16": [{"Name": f"Player U16-{i+1}", "Captain": (i==0), "Strength": 73+i, "Ambition": 78+i, "Improvement": 58+i} for i in range(35)],
+# ---------- Placeholder Player Data ----------
+players_data = {
+    "Under 7": ["Player A", "Player B"],
+    "Under 10": ["Player C", "Player D"],
+    "Under 12": ["Player E", "Player F"],
+    "Under 14": ["Munene", "Sammy"],
+    "Under 16": ["Player G", "Player H"]
 }
 
-if menu == "Overview":
-    st.subheader("🏟️ Our Playing Style")
-    st.markdown("""
-        - Possession-based play
-        - High pressing
-        - Quick transitions
-        - Development focused
-    """)
+# ---------- Section: Home ----------
+if section == "Home":
+    st.title("🏆 Wosh FC: From the Streets to the Stars")
+    st.write("Welcome to the official Wosh FC Dashboard. Track player performance, manage training, analyze matches, and more.")
 
-    st.subheader("📈 General Team Stats")
-    age_group = st.selectbox("Choose Age Group", list(players.keys()))
-    df = pd.DataFrame(players[age_group])
-    fig = px.line(df, x="Name", y="Improvement", title=f"Improvement Graph: {age_group}")
+# ---------- Section: Player Profiles ----------
+elif section == "Player Profiles":
+    st.title("📋 Player Profiles")
+    age_group = st.selectbox("Select Age Group", list(players_data.keys()))
+    selected_player = st.selectbox("Select Player", players_data[age_group])
+
+    st.subheader(f"{selected_player} - Profile Overview")
+    st.write("**Position:** Midfielder")
+    st.write("**Captain:** Yes" if selected_player == "Munene" else "**Captain:** No")
+
+    st.write("**Dream/Ambition:** Become a professional footballer.")
+    st.write("**Strengths:** Speed, Vision, Passing")
+    st.write("**Areas of Improvement:** Shooting, Stamina")
+
+    st.subheader("📊 Player Development Graph")
+    fig = px.line(
+        pd.DataFrame({
+            "Date": pd.date_range(start="2025-01-01", periods=6, freq="M"),
+            "Rating": [68, 70, 72, 74, 75, 77]
+        }),
+        x="Date", y="Rating", title=f"Progression for {selected_player}"
+    )
     st.plotly_chart(fig, use_container_width=True)
 
-elif menu == "Players":
-    st.subheader("🧍‍♂️ Player Profiles")
-    group = st.selectbox("Age Group", list(players.keys()))
-    df = pd.DataFrame(players[group])
-    for index, row in df.iterrows():
-        with st.expander(f"{row['Name']} {'🌟 (Captain)' if row['Captain'] else ''}"):
-            st.write(f"**Strength:** {row['Strength']}")
-            st.write(f"**Ambition:** {row['Ambition']}")
-            st.write(f"**Area of Improvement:** {row['Improvement']}")
-            st.progress(int(row['Improvement']))
+    st.subheader("📝 Coach Remarks")
+    st.text_area("Remarks", placeholder="Enter notes about player's attitude, form, and development...")
 
-elif menu == "Training Drills":
-    st.subheader("🏋️ Training Drills")
-    st.markdown("""
-    - **Drill 1:** Passing Circuit
-    - **Drill 2:** Shooting Accuracy
-    - **Drill 3:** 1v1 Duel Mastery
-    - **Drill 4:** Tactical Position Play
-    """)
+# ---------- Section: Training & Drills ----------
+elif section == "Training & Drills":
+    st.title("⚽ Training Sessions & Drills")
+    st.write("Organize tactical training by age group:")
+    group = st.selectbox("Select Age Group", list(players_data.keys()))
+    st.text_area("Drills for Today", placeholder="e.g., 1v1, Passing Triangle, High-Pressing Game")
+    st.text_area("Objectives", placeholder="e.g., Improve reaction speed, master off-the-ball movement")
 
-elif menu == "Match Analysis":
-    st.subheader("📊 Match Analysis")
-    match_date = st.date_input("Match Date")
-    opponent = st.text_input("Opponent")
-    notes = st.text_area("Match Notes")
-    rating = st.slider("Team Performance Rating", 0, 10)
-    if st.button("Save Analysis"):
-        st.success("Analysis Saved!")
+# ---------- Section: Match Analysis ----------
+elif section == "Match Analysis":
+    st.title("📈 Match Analysis")
+    match_name = st.text_input("Match Title")
+    st.text_area("Coach Comments", placeholder="Summarize the team's performance and areas to improve")
 
-elif menu == "Tactical Board":
-    st.subheader("📋 Tactical Board (Concept)")
-    st.info("Drag-and-drop functionality to be added. Currently under development.")
-    st.image("https://tacticalpad.com/images/screens/tacticalpad1.png", caption="Sample Tactical Board")
+# ---------- Section: Tactical Board ----------
+elif section == "Tactical Board":
+    st.title("📌 Tactical Board")
+    st.write("(Future Feature) Drag and Drop Tactical Tool – coming soon!")
 
-elif menu == "Video Module":
-    st.subheader("🎥 Video Module")
-    video_file = st.file_uploader("Upload Match or Training Video", type=["mp4", "mov"])
-    if video_file:
-        st.video(video_file)
-        notes = st.text_area("Add Time-Stamped Notes Below")
-        if st.button("Save Notes"):
-            st.success("Notes Saved!")
+# ---------- Section: Video Module ----------
+elif section == "Video Module":
+    st.title("🎥 Match Footage + Notes")
+    uploaded_video = st.file_uploader("Upload Match Video", type=["mp4", "mov"])
+    if uploaded_video:
+        st.video(uploaded_video)
+        st.text_area("Timestamp Notes", placeholder="e.g., 12:34 – Excellent pressing by midfield.")
+
+# ---------- Section: Game Statistics ----------
+elif section == "Game Statistics":
+    st.title("📊 Full Match Stats")
+
+    st.subheader("Team Stats")
+    team_stats = {
+        "Possession (%)": 62,
+        "Attempts on Goal": 14,
+        "Total Attempts": 20,
+        "Saves": 5,
+        "Corners": 7,
+        "Offsides": 2,
+        "Distance Covered (KM)": 96,
+        "Passes Completed": 480,
+        "Fouls Committed": 11
+    }
+    st.table(pd.DataFrame.from_dict(team_stats, orient='index', columns=['Value']))
+
+    st.subheader("📈 Individual Player Stats")
+    selected_stat_player = st.selectbox("Select Player for Stats", players_data["Under 14"])
+    player_stats = {
+        "Match Rating": 7.5,
+        "Distance Covered": "10.2 KM",
+        "Passes Made": 48,
+        "Shots on Target": 3,
+        "Fouls Committed": 1,
+        "Assists": 1,
+        "Goals": 1
+    }
+    st.table(pd.DataFrame.from_dict(player_stats, orient='index', columns=['Value']))
+
+    st.subheader("🔥 Heatmap / Movement")
+    st.image("https://raw.githubusercontent.com/Joshr-cell/assets/main/heatmap_sample.png", caption="Sample Heatmap")
+
+    st.subheader("🧠 Coach Rating Input")
+    st.slider("Rate Player Performance", 1, 10, 7)
+    st.text_area("Coach Match Remarks", placeholder="Enter remarks specific to this player's performance.")
+
 
