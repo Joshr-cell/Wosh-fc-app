@@ -1,122 +1,65 @@
-# Wosh FC Analyzer App (Inspired by FIFA Gameplay Style)
-
 import streamlit as st
-import pandas as pd
 import plotly.express as px
+from PIL import Image
+import pandas as pd
 
 st.set_page_config(page_title="Wosh FC Analyzer", layout="wide")
 
-# ---------- Sidebar Navigation ----------
-with st.sidebar:
-    st.title("Wosh FC Dashboard")
-    section = st.radio("Navigate", [
-        "Home", "Player Profiles", "Training & Drills", "Match Analysis", "Tactical Board", "Video Module", "Game Statistics"
-    ])
+st.title("⚽ Wosh FC Analyzer App")
+st.markdown("---")
 
-# ---------- Placeholder Player Data ----------
-players_data = {
-    "Under 7": ["Player A", "Player B"],
-    "Under 10": ["Player C", "Player D"],
-    "Under 12": ["Player E", "Player F"],
-    "Under 14": ["Munene", "Sammy"],
-    "Under 16": ["Player G", "Player H"]
+# Sidebar Navigation
+page = st.sidebar.selectbox("Select Section", [
+    "Team Overview",
+    "Player Profiles",
+    "Training Drills",
+    "Tactical Board",
+    "Video Analysis",
+    "Match Analysis"
+])
+
+# Player Data (Organized by Age Group)
+team_structure = {
+    "Under 7": 12,
+    "Under 10": 12,
+    "Under 12": 12,
+    "Under 14": 12,
+    "Under 15": 7
 }
 
-# ---------- Section: Home ----------
-if section == "Home":
-    st.title("🏆 Wosh FC: From the Streets to the Stars")
-    st.write("Welcome to the official Wosh FC Dashboard. Track player performance, manage training, analyze matches, and more.")
+# Sample player database for demonstration
+players = [
+    {"name": "Munene", "age_group": "Under 14", "strength": "Speed", "ambition": "Play for Kenya", "improvement": "Passing", "rating": 8.2, "distance": 7.5, "passes": 45, "coach_note": "Strong mentality."},
+    # Add more player entries here for each group
+]
 
-# ---------- Section: Player Profiles ----------
-elif section == "Player Profiles":
-    st.title("📋 Player Profiles")
-    age_group = st.selectbox("Select Age Group", list(players_data.keys()))
-    selected_player = st.selectbox("Select Player", players_data[age_group])
+# Team Overview Section
+if page == "Team Overview":
+    st.header("👥 Team Structure")
+    for group, count in team_structure.items():
+        st.write(f"**{group}**: {count} players")
 
-    st.subheader(f"{selected_player} - Profile Overview")
-    st.write("**Position:** Midfielder")
-    st.write("**Captain:** Yes" if selected_player == "Munene" else "**Captain:** No")
+# Player Profiles Section
+elif page == "Player Profiles":
+    st.header("📋 Player Profiles")
+    for player in players:
+        st.subheader(player["name"])
+        st.write(f"**Age Group:** {player['age_group']}")
+        st.write(f"**Strength:** {player['strength']}")
+        st.write(f"**Ambition:** {player['ambition']}")
+        st.write(f"**Area of Improvement:** {player['improvement']}")
+        st.write(f"**Coach's Remark:** {player['coach_note']}")
 
-    st.write("**Dream/Ambition:** Become a professional footballer.")
-    st.write("**Strengths:** Speed, Vision, Passing")
-    st.write("**Areas of Improvement:** Shooting, Stamina")
+        fig = px.bar(
+            x=["Rating", "Distance (km)", "Passes Completed"],
+            y=[player['rating'], player['distance'], player['passes']],
+            labels={'x': 'Metric', 'y': 'Value'},
+            title=f"Performance Graph for {player['name']}"
+        )
+        st.plotly_chart(fig)
 
-    st.subheader("📊 Player Development Graph")
-    fig = px.line(
-        pd.DataFrame({
-            "Date": pd.date_range(start="2025-01-01", periods=6, freq="M"),
-            "Rating": [68, 70, 72, 74, 75, 77]
-        }),
-        x="Date", y="Rating", title=f"Progression for {selected_player}"
-    )
-    st.plotly_chart(fig, use_container_width=True)
-
-    st.subheader("📝 Coach Remarks")
-    st.text_area("Remarks", placeholder="Enter notes about player's attitude, form, and development...")
-
-# ---------- Section: Training & Drills ----------
-elif section == "Training & Drills":
-    st.title("⚽ Training Sessions & Drills")
-    st.write("Organize tactical training by age group:")
-    group = st.selectbox("Select Age Group", list(players_data.keys()))
-    st.text_area("Drills for Today", placeholder="e.g., 1v1, Passing Triangle, High-Pressing Game")
-    st.text_area("Objectives", placeholder="e.g., Improve reaction speed, master off-the-ball movement")
-
-# ---------- Section: Match Analysis ----------
-elif section == "Match Analysis":
-    st.title("📈 Match Analysis")
-    match_name = st.text_input("Match Title")
-    st.text_area("Coach Comments", placeholder="Summarize the team's performance and areas to improve")
-
-# ---------- Section: Tactical Board ----------
-elif section == "Tactical Board":
-    st.title("📌 Tactical Board")
-    st.write("(Future Feature) Drag and Drop Tactical Tool – coming soon!")
-
-# ---------- Section: Video Module ----------
-elif section == "Video Module":
-    st.title("🎥 Match Footage + Notes")
-    uploaded_video = st.file_uploader("Upload Match Video", type=["mp4", "mov"])
-    if uploaded_video:
-        st.video(uploaded_video)
-        st.text_area("Timestamp Notes", placeholder="e.g., 12:34 – Excellent pressing by midfield.")
-
-# ---------- Section: Game Statistics ----------
-elif section == "Game Statistics":
-    st.title("📊 Full Match Stats")
-
-    st.subheader("Team Stats")
-    team_stats = {
-        "Possession (%)": 62,
-        "Attempts on Goal": 14,
-        "Total Attempts": 20,
-        "Saves": 5,
-        "Corners": 7,
-        "Offsides": 2,
-        "Distance Covered (KM)": 96,
-        "Passes Completed": 480,
-        "Fouls Committed": 11
-    }
-    st.table(pd.DataFrame.from_dict(team_stats, orient='index', columns=['Value']))
-
-    st.subheader("📈 Individual Player Stats")
-    selected_stat_player = st.selectbox("Select Player for Stats", players_data["Under 14"])
-    player_stats = {
-        "Match Rating": 7.5,
-        "Distance Covered": "10.2 KM",
-        "Passes Made": 48,
-        "Shots on Target": 3,
-        "Fouls Committed": 1,
-        "Assists": 1,
-        "Goals": 1
-    }
-    st.table(pd.DataFrame.from_dict(player_stats, orient='index', columns=['Value']))
-
-    st.subheader("🔥 Heatmap / Movement")
-    st.image("https://raw.githubusercontent.com/Joshr-cell/assets/main/heatmap_sample.png", caption="Sample Heatmap")
-
-    st.subheader("🧠 Coach Rating Input")
-    st.slider("Rate Player Performance", 1, 10, 7)
-    st.text_area("Coach Match Remarks", placeholder="Enter remarks specific to this player's performance.")
-
+# Training Drills
+elif page == "Training Drills":
+    st.header("🏋️ Training & Drills")
+    st.write("Upload training drills, describe th
 
