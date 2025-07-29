@@ -1,14 +1,6 @@
 import streamlit as st
 import pandas as pd
 from PIL import Image
-
-# Page configuration
-st.set_page_config(page_title="Wosh FC Analyzer", layout="wide")
-
-# Load logo
-st.sidebar.image("assets/wosh_logo.png", width=150)
-st.sidebar.title("Wosh FC Academy")
-
 # Main Title
 st.title("⚽ Wosh FC Analyzer – Tactical Planner & Drill Tracker")
 
