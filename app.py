@@ -1,6 +1,5 @@
 import streamlit as st
 from streamlit_option_menu import option_menu
-
 # --- Streamlit Config ---
 st.set_page_config(page_title="Wosh FC Dashboard", layout="wide")
 
