@@ -1,167 +1,116 @@
 import streamlit as st
-from streamlit_option_menu import option_menu
-# --- Streamlit Config ---
-st.set_page_config(page_title="Wosh FC Dashboard", layout="wide")
+import time
+import requests
+import json
+import random
+import pandas as pd
 
-# --- Dark Theme Styling ---
-st.markdown("""
-    <style>
-        html, body, [class*="css"] {
-            background-color: #0e1117;
-            color: #ffffff;
-            font-family: 'Segoe UI', sans-serif;
-        }
-        .stApp {
-            background-color: #0e1117;
-        }
-        .st-bc, .st-c4, .stButton>button {
-            background-color: #222222;
-            color: white;
-        }
-        .stMarkdown h1, .stMarkdown h2, .stMarkdown h3 {
-            color: #f9fafb;
-        }
-        .css-1v3fvcr {
-            background-color: #1e222a;
-        }
-    </style>
-""", unsafe_allow_html=True)
+# --- SETTINGS ---
+API_TOKEN = "pWdA8b1q6qRW1AM"
+VOL_INDEX = "R_100"
+STAKE_PERCENT = 0.01  # 1%
+TICK_HISTORY = 10
+REPEAT_THRESHOLD = 4
 
-# --- Sidebar Navigation ---
-with st.sidebar:
-    selected = option_menu("Wosh FC Menu", [
-        "Home", "Players", "Training Drills", "Match Analysis", "Tactical Board", "Video Analysis"
-    ], icons=['house', 'people', 'activity', 'bar-chart', 'map', 'camera-video'], menu_icon="cast", default_index=0)
+# --- STREAMLIT UI ---
+st.set_page_config(page_title="Digit Differ Bot", layout="wide")
+st.title("🎯 Deriv Digit Differ Bot - Live Trading")
+st.markdown("Monitoring latest ticks and placing Digit Differ trades when overexposure is detected.")
 
-# --- Data ---
-team_structure = {
-    "Under 7": [],
-    "Under 10": [],
-    "Under 12": [],
-    "Under 14": [],
-    "Under 16": []
-}
+placeholder = st.empty()
 
-# --- Home ---
-if selected == "Home":
-    st.title("🏠 Welcome to Wosh FC")
-    st.markdown("Manage training, tactics, and performance across all age groups.")
-    for team, players in team_structure.items():
-        st.markdown(f"### {team} — {len(players)} Players")
+# --- VARIABLES ---
+ws_url = "wss://ws.binaryws.com/websockets/v3?app_id=1089"
+balance = 9.0
+tick_data = []
 
-# --- Players ---
-elif selected == "Players":
-    st.title("👥 Player Profiles by Category")
+# --- FUNCTIONS ---
 
-    for team in team_structure:
-        with st.expander(f"{team} — {len(team_structure[team])} players", expanded=False):
-            with st.form(f"add_player_form_{team}"):
-                st.subheader(f"➕ Add Player to {team}")
-                name = st.text_input("Name", key=f"name_{team}")
-                strength = st.slider("Strength", 0, 100, 50, key=f"strength_{team}")
-                ambition = st.slider("Ambition", 0, 100, 50, key=f"ambition_{team}")
-                improvement = st.text_input("Area of Improvement", key=f"improve_{team}")
-                remarks = st.text_area("Coach's Remarks", key=f"remarks_{team}")
-                submitted = st.form_submit_button("Add Player")
-                if submitted and name:
-                    new_player = {
-                        "name": name,
-                        "team": team,
-                        "strength": strength,
-                        "ambition": ambition,
-                        "area_of_improvement": improvement,
-                        "coach_remarks": remarks
-                    }
-                    team_structure[team].append(new_player)
-                    st.success(f"{name} added to {team}.")
+def get_last_digits(history):
+    return [int(tick[-1]) for tick in history]
 
-            if team_structure[team]:
-                for player in team_structure[team]:
-                    with st.expander(f"🧍‍♂️ {player['name']}"):
-                        st.write(f"**Team:** {player['team']}")
-                        st.write(f"**Strength:** {player['strength']}")
-                        st.write(f"**Ambition:** {player['ambition']}")
-                        st.write(f"**Area of Improvement:** {player['area_of_improvement']}")
-                        st.write(f"**Coach's Remarks:** {player['coach_remarks']}")
+def is_overexposed(digits):
+    counts = {d: digits.count(d) for d in set(digits)}
+    for digit, count in counts.items():
+        if count >= REPEAT_THRESHOLD:
+            return digit
+    return None
 
-                        radar = go.Figure()
-                        radar.add_trace(go.Scatterpolar(
-                            r=[player['strength'], player['ambition'], 100],
-                            theta=['Strength', 'Ambition', 'Max'],
-                            fill='toself',
-                            name=player['name']
-                        ))
-                        radar.update_layout(
-                            polar=dict(radialaxis=dict(visible=True, range=[0, 100])),
-                            showlegend=False,
-                            height=300,
-                            paper_bgcolor="#0e1117",
-                            font_color="#ffffff"
-                        )
-                        st.plotly_chart(radar, use_container_width=True)
+def place_digit_differ_contract(forbidden_digit, stake, symbol):
+    payload = {
+        "ticks": 1,
+        "subscribe": 1,
+        "passthrough": {"action": "trade"},
+        "contract_type": "DIGITDIFF",
+        "amount": stake,
+        "symbol": symbol,
+        "duration": 1,
+        "basis": "stake",
+        "currency": "USD",
+        "barrier": forbidden_digit
+    }
+    return payload
 
-                        st.markdown("#### 📊 Match Analysis")
-                        col1, col2 = st.columns(2)
-                        with col1:
-                            goals = st.number_input(f"{player['name']} - Goals", 0, key=f"goals_{player['name']}")
-                            assists = st.number_input(f"{player['name']} - Assists", 0, key=f"assists_{player['name']}")
-                        with col2:
-                            distance = st.number_input(f"{player['name']} - Distance Covered (km)", 0.0, key=f"dist_{player['name']}")
-                            passes = st.number_input(f"{player['name']} - Passes Completed", 0, key=f"passes_{player['name']}")
-                        st.success(f"Stats recorded for {player['name']}.")
+# --- MAIN LOOP ---
+if st.button("Start Live Bot"):
+    st.success("⏳ Connecting to Deriv and starting live trading...")
+    import websocket
 
-# --- Training Drills ---
-elif selected == "Training Drills":
-    st.title("🏋️‍♂️ Training Drills")
-    uploaded_file = st.file_uploader("Upload Drill Image or Video")
-    description = st.text_area("Drill Description")
-    if uploaded_file and description:
-        st.success("Drill uploaded successfully!")
-        if uploaded_file.name.endswith('.mp4'):
-            st.video(uploaded_file)
-        else:
-            st.image(uploaded_file)
-        st.write(description)
+    def on_message(ws, message):
+        global tick_data, balance
+        data = json.loads(message)
 
-# --- Match Analysis ---
-elif selected == "Match Analysis":
-    st.title("📊 Match Analysis")
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        possession = st.slider("Possession %", 0, 100, 50)
-        attempts = st.number_input("Attempts on Goal", 0)
-    with col2:
-        corners = st.number_input("Corners", 0)
-        fouls = st.number_input("Fouls Committed", 0)
-    with col3:
-        distance = st.number_input("Avg Distance Covered (km)", 0.0)
-        passes = st.number_input("Passes Completed", 0)
+        # Handle tick update
+        if "tick" in data:
+            tick = data["tick"]["quote"]
+            tick_data.append(str(tick))
+            if len(tick_data) > TICK_HISTORY:
+                tick_data.pop(0)
 
-    if st.button("Analyze Match"):
-        st.success("Match stats analyzed.")
-        st.metric("Possession", f"{possession}%")
-        st.metric("Attempts", attempts)
-        st.metric("Passes", passes)
-        st.metric("Distance (km)", distance)
-        st.metric("Fouls", fouls)
+            last_digits = get_last_digits(tick_data)
+            forbidden_digit = is_overexposed(last_digits)
 
-# --- Tactical Board ---
-elif selected == "Tactical Board":
-    st.title("📌 Tactical Board")
-    st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Football_pitch_metric.svg/2560px-Football_pitch_metric.svg.png", caption="Tactical Field")
-    st.markdown("### 💡 Formation Strategy")
-    formation = st.text_input("Enter Team Formation (e.g., 4-3-3, 4-4-2):")
-    if formation:
-        st.success(f"📋 Current Formation: {formation}")
-    st.info("Interactive drawing tools coming soon!")
+            with placeholder.container():
+                st.subheader("📈 Latest Digits")
+                st.write(last_digits)
+                st.write(f"Detected Overexposed Digit: `{forbidden_digit}`")
 
-# --- Video Analysis ---
-elif selected == "Video Analysis":
-    st.title("🎥 Video Analysis")
-    video = st.file_uploader("Upload Match or Training Video")
-    notes = st.text_area("Coach's Notes")
-    if video:
-        st.video(video)
-    if notes:
-        st.write("**Coach Notes:**")
-        st.write(notes)
+            if forbidden_digit is not None:
+                stake = round(balance * STAKE_PERCENT, 2)
+                contract = place_digit_differ_contract(forbidden_digit, stake, VOL_INDEX)
+
+                ws.send(json.dumps({
+                    "authorize": API_TOKEN
+                }))
+                time.sleep(1)
+                ws.send(json.dumps({"buy": 1, **contract}))
+                st.warning(f"🎯 Placed Digit Differ trade against `{forbidden_digit}` with stake ${stake}")
+                time.sleep(5)
+
+        # Handle buy result
+        if "buy" in data:
+            st.info(f"📤 Trade Placed: {data['buy']['contract_id']}")
+
+    def on_error(ws, error):
+        st.error(f"❌ Error: {error}")
+
+    def on_close(ws):
+        st.warning("🔌 WebSocket connection closed.")
+
+    def on_open(ws):
+        ws.send(json.dumps({
+            "ticks": VOL_INDEX,
+            "subscribe": 1
+        }))
+
+    ws = websocket.WebSocketApp(
+        ws_url,
+        on_message=on_message,
+        on_error=on_error,
+        on_close=on_close,
+        on_open=on_open
+    )
+
+    import _thread
+    _thread.start_new_thread(ws.run_forever, ())
+
