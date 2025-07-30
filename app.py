@@ -1,116 +1,81 @@
+# app.py
 import streamlit as st
-import time
-import requests
-import json
-import random
 import pandas as pd
+import plotly.express as px
+from PIL import Image
 
-# --- SETTINGS ---
-API_TOKEN = "pWdA8b1q6qRW1AM"
-VOL_INDEX = "R_100"
-STAKE_PERCENT = 0.01  # 1%
-TICK_HISTORY = 10
-REPEAT_THRESHOLD = 4
+st.set_page_config(page_title="Wosh FC Analyzer", layout="wide")
 
-# --- STREAMLIT UI ---
-st.set_page_config(page_title="Digit Differ Bot", layout="wide")
-st.title("🎯 Deriv Digit Differ Bot - Live Trading")
-st.markdown("Monitoring latest ticks and placing Digit Differ trades when overexposure is detected.")
+st.title("⚽ Wosh FC Player Analyzer Dashboard")
 
-placeholder = st.empty()
+# Sidebar navigation
+menu = st.sidebar.radio("Navigation", [
+    "Overview", "Players", "Training Drills", "Match Analysis", "Tactical Board", "Video Module"
+])
 
-# --- VARIABLES ---
-ws_url = "wss://ws.binaryws.com/websockets/v3?app_id=1089"
-balance = 9.0
-tick_data = []
+# Dummy player data setup (replace with Firebase or database later)
+players = {
+    "Under 7": [{"Name": f"Player U7-{i+1}", "Captain": (i==0), "Strength": 65+i, "Ambition": 70+i, "Improvement": 50+i} for i in range(35)],
+    "Under 10": [{"Name": f"Player U10-{i+1}", "Captain": (i==0), "Strength": 67+i, "Ambition": 72+i, "Improvement": 52+i} for i in range(35)],
+    "Under 12": [{"Name": f"Player U12-{i+1}", "Captain": (i==0), "Strength": 69+i, "Ambition": 74+i, "Improvement": 54+i} for i in range(35)],
+    "Under 14": [{"Name": f"Player U14-{i+1}", "Captain": (i==0), "Strength": 71+i, "Ambition": 76+i, "Improvement": 56+i} for i in range(35)],
+    "Under 16": [{"Name": f"Player U16-{i+1}", "Captain": (i==0), "Strength": 73+i, "Ambition": 78+i, "Improvement": 58+i} for i in range(35)],
+}
 
-# --- FUNCTIONS ---
+if menu == "Overview":
+    st.subheader("🏟️ Our Playing Style")
+    st.markdown("""
+        - Possession-based play
+        - High pressing
+        - Quick transitions
+        - Development focused
+    """)
 
-def get_last_digits(history):
-    return [int(tick[-1]) for tick in history]
+    st.subheader("📈 General Team Stats")
+    age_group = st.selectbox("Choose Age Group", list(players.keys()))
+    df = pd.DataFrame(players[age_group])
+    fig = px.line(df, x="Name", y="Improvement", title=f"Improvement Graph: {age_group}")
+    st.plotly_chart(fig, use_container_width=True)
 
-def is_overexposed(digits):
-    counts = {d: digits.count(d) for d in set(digits)}
-    for digit, count in counts.items():
-        if count >= REPEAT_THRESHOLD:
-            return digit
-    return None
+elif menu == "Players":
+    st.subheader("🧍‍♂️ Player Profiles")
+    group = st.selectbox("Age Group", list(players.keys()))
+    df = pd.DataFrame(players[group])
+    for index, row in df.iterrows():
+        with st.expander(f"{row['Name']} {'🌟 (Captain)' if row['Captain'] else ''}"):
+            st.write(f"**Strength:** {row['Strength']}")
+            st.write(f"**Ambition:** {row['Ambition']}")
+            st.write(f"**Area of Improvement:** {row['Improvement']}")
+            st.progress(int(row['Improvement']))
 
-def place_digit_differ_contract(forbidden_digit, stake, symbol):
-    payload = {
-        "ticks": 1,
-        "subscribe": 1,
-        "passthrough": {"action": "trade"},
-        "contract_type": "DIGITDIFF",
-        "amount": stake,
-        "symbol": symbol,
-        "duration": 1,
-        "basis": "stake",
-        "currency": "USD",
-        "barrier": forbidden_digit
-    }
-    return payload
+elif menu == "Training Drills":
+    st.subheader("🏋️ Training Drills")
+    st.markdown("""
+    - **Drill 1:** Passing Circuit
+    - **Drill 2:** Shooting Accuracy
+    - **Drill 3:** 1v1 Duel Mastery
+    - **Drill 4:** Tactical Position Play
+    """)
 
-# --- MAIN LOOP ---
-if st.button("Start Live Bot"):
-    st.success("⏳ Connecting to Deriv and starting live trading...")
-    import websocket
+elif menu == "Match Analysis":
+    st.subheader("📊 Match Analysis")
+    match_date = st.date_input("Match Date")
+    opponent = st.text_input("Opponent")
+    notes = st.text_area("Match Notes")
+    rating = st.slider("Team Performance Rating", 0, 10)
+    if st.button("Save Analysis"):
+        st.success("Analysis Saved!")
 
-    def on_message(ws, message):
-        global tick_data, balance
-        data = json.loads(message)
+elif menu == "Tactical Board":
+    st.subheader("📋 Tactical Board (Concept)")
+    st.info("Drag-and-drop functionality to be added. Currently under development.")
+    st.image("https://tacticalpad.com/images/screens/tacticalpad1.png", caption="Sample Tactical Board")
 
-        # Handle tick update
-        if "tick" in data:
-            tick = data["tick"]["quote"]
-            tick_data.append(str(tick))
-            if len(tick_data) > TICK_HISTORY:
-                tick_data.pop(0)
-
-            last_digits = get_last_digits(tick_data)
-            forbidden_digit = is_overexposed(last_digits)
-
-            with placeholder.container():
-                st.subheader("📈 Latest Digits")
-                st.write(last_digits)
-                st.write(f"Detected Overexposed Digit: `{forbidden_digit}`")
-
-            if forbidden_digit is not None:
-                stake = round(balance * STAKE_PERCENT, 2)
-                contract = place_digit_differ_contract(forbidden_digit, stake, VOL_INDEX)
-
-                ws.send(json.dumps({
-                    "authorize": API_TOKEN
-                }))
-                time.sleep(1)
-                ws.send(json.dumps({"buy": 1, **contract}))
-                st.warning(f"🎯 Placed Digit Differ trade against `{forbidden_digit}` with stake ${stake}")
-                time.sleep(5)
-
-        # Handle buy result
-        if "buy" in data:
-            st.info(f"📤 Trade Placed: {data['buy']['contract_id']}")
-
-    def on_error(ws, error):
-        st.error(f"❌ Error: {error}")
-
-    def on_close(ws):
-        st.warning("🔌 WebSocket connection closed.")
-
-    def on_open(ws):
-        ws.send(json.dumps({
-            "ticks": VOL_INDEX,
-            "subscribe": 1
-        }))
-
-    ws = websocket.WebSocketApp(
-        ws_url,
-        on_message=on_message,
-        on_error=on_error,
-        on_close=on_close,
-        on_open=on_open
-    )
-
-    import _thread
-    _thread.start_new_thread(ws.run_forever, ())
-
+elif menu == "Video Module":
+    st.subheader("🎥 Video Module")
+    video_file = st.file_uploader("Upload Match or Training Video", type=["mp4", "mov"])
+    if video_file:
+        st.video(video_file)
+        notes = st.text_area("Add Time-Stamped Notes Below")
+        if st.button("Save Notes"):
+            st.success("Notes Saved!")
