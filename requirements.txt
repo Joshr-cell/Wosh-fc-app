@@ -6,4 +6,5 @@ plotly
 streamlit-option-menu
 streamlit==1.35.0
 streamlit-option-menu==0.3.6
-
+pandas==2.2.2
+plotly==5.22.0
