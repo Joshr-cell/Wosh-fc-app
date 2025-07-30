@@ -1,120 +1,88 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from PIL import Image
 
-# --- Set page config ---
+# Set page config
 st.set_page_config(page_title="Wosh FC Analyzer", layout="wide")
 
-# --- Header ---
-st.title("⚽ Wosh FC Analyzer App")
-st.markdown("Analyze, Train, and Improve Players from U7 to U16")
+# Logo & Title
+st.sidebar.image("wosh_fc_logo.png", use_column_width=True)
+st.sidebar.markdown("⚽ **Wosh FC Tactical Hub**")
+st.sidebar.markdown("---")
 
-# --- Sidebar Navigation ---
-menu = st.sidebar.radio("Navigation", [
-    "Home", "Players", "Training Drills", "Match Analysis", "Tactical Board", "Video Analysis"
-])
+# Main Title
+st.markdown("""
+    <style>
+        .main-title {
+            font-size: 40px;
+            color: #00C1D4;
+            font-weight: bold;
+            text-align: center;
+        }
+    </style>
+    <p class="main-title">Wosh FC Performance Analyzer</p>
+""", unsafe_allow_html=True)
 
-# --- Data ---
-team_structure = {
-    "Under 7": 12,
-    "Under 10": 12,
-    "Under 12": 12,
-    "Under 14": 12,
-    "Under 16": 7
+# Sample data
+data = {
+    'Player': ['Branton', 'Ian', 'Pasi', 'Samson', 'Ole'],
+    'Distance Covered (km)': [7.2, 6.5, 8.1, 7.8, 6.9],
+    'Pass Accuracy (%)': [85, 78, 90, 82, 76],
+    'Possession (%)': [60, 52, 65, 58, 50],
+    'Shots on Target': [4, 2, 5, 3, 1],
+    'Goals': [1, 0, 2, 1, 0]
 }
+df = pd.DataFrame(data)
 
-# --- Sample Players Data ---
-players = [
-    {"name": "Munene", "team": "Under 14", "strength": 80, "ambition": 90, "area_of_improvement": "Passing", "coach_remarks": "Very disciplined."},
-    {"name": "Byron", "team": "Under 14", "strength": 75, "ambition": 85, "area_of_improvement": "Tackling", "coach_remarks": "Shows improvement weekly."},
-    {"name": "Victor", "team": "Under 14", "strength": 72, "ambition": 88, "area_of_improvement": "Positioning", "coach_remarks": "Needs confidence."},
-]
+# Tabs for different analysis
+tab1, tab2, tab3 = st.tabs(["📊 Team Overview", "📈 Player Stats", "📅 Match Summary"])
 
-# --- Home Page ---
-if menu == "Home":
-    st.subheader("🏠 Welcome to Wosh FC")
-    st.markdown("""
-    This app is designed to monitor, evaluate, and manage players across various age groups:
-    - Under 7 (12 players)
-    - Under 10 (12 players)
-    - Under 12 (12 players)
-    - Under 14 (12 players)
-    - Under 16 (7 players)
-    """)
+with tab1:
+    st.subheader("Team Summary")
+    st.dataframe(df, use_container_width=True)
 
-# --- Player Profiles ---
-elif menu == "Players":
-    st.subheader("👥 Player Profiles")
-    for player in players:
-        with st.expander(player['name']):
-            st.write(f"**Team:** {player['team']}")
-            st.write(f"**Strength:** {player['strength']}")
-            st.write(f"**Ambition:** {player['ambition']}")
-            st.write(f"**Area of Improvement:** {player['area_of_improvement']}")
-            st.write(f"**Coach's Remarks:** {player['coach_remarks']}")
+    st.markdown("### Average Metrics")
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Avg Distance", f"{df['Distance Covered (km)'].mean():.2f} km")
+    col2.metric("Avg Pass Accuracy", f"{df['Pass Accuracy (%)'].mean():.1f}%")
+    col3.metric("Avg Possession", f"{df['Possession (%)'].mean():.1f}%")
 
-            # Plot individual performance chart
-            df = pd.DataFrame({
-                'Metric': ['Strength', 'Ambition'],
-                'Value': [player['strength'], player['ambition']]
-            })
-            fig = px.bar(df, x='Metric', y='Value', title=f"Performance for {player['name']}")
-            st.plotly_chart(fig)
+with tab2:
+    st.subheader("Player Comparison")
 
-            # Placeholder for stats
-            st.markdown("### Match Stats")
-            st.write("Possession: 65%")
-            st.write("Attempts on Goal: 4")
-            st.write("Distance Covered: 6.5 km")
-            st.write("Passes Completed: 32")
-            st.write("Fouls Committed: 1")
-            st.write("Heatmap: Coming soon 🔥")
+    player_select = st.selectbox("Select Player", df['Player'].unique())
+    player_data = df[df['Player'] == player_select].iloc[0]
 
-# --- Training Drills ---
-elif menu == "Training Drills":
-    st.subheader("🏋️‍♂️ Training Drills")
-    uploaded_file = st.file_uploader("Upload Drill Image/Video")
-    description = st.text_area("Describe the Drill")
-    if uploaded_file and description:
-        st.success("Drill uploaded successfully!")
-        st.video(uploaded_file) if uploaded_file.name.endswith('.mp4') else st.image(uploaded_file)
-        st.write(description)
+    st.markdown(f"### Stats for **{player_select}**")
 
-# --- Match Analysis ---
-elif menu == "Match Analysis":
-    st.subheader("📊 Match Analysis")
-    st.markdown("Upload match stats and get analysis.")
-    possession = st.slider("Possession %", 0, 100, 50)
-    attempts = st.number_input("Attempts on Goal", 0)
-    corners = st.number_input("Corners", 0)
-    fouls = st.number_input("Fouls Committed", 0)
-    distance = st.number_input("Average Distance Covered (km)", 0.0)
-    passes = st.number_input("Passes Completed", 0)
+    st.metric("Distance Covered", f"{player_data['Distance Covered (km)']} km")
+    st.metric("Pass Accuracy", f"{player_data['Pass Accuracy (%)']}%")
+    st.metric("Possession", f"{player_data['Possession (%)']}%")
+    st.metric("Shots on Target", player_data['Shots on Target'])
+    st.metric("Goals", player_data['Goals'])
 
-    if st.button("Analyze"):
-        st.success("Match stats analyzed.")
-        st.write("Possession vs Opponent: ", possession, "%")
-        st.write("Attempts: ", attempts)
-        st.write("Corners: ", corners)
-        st.write("Fouls: ", fouls)
-        st.write("Distance Covered: ", distance, "km")
-        st.write("Passes Completed: ", passes)
+    # Visual chart for the player
+    chart_data = {
+        "Metric": ["Distance", "Pass Accuracy", "Possession", "Shots", "Goals"],
+        "Value": [
+            player_data['Distance Covered (km)'],
+            player_data['Pass Accuracy (%)'],
+            player_data['Possession (%)'],
+            player_data['Shots on Target'],
+            player_data['Goals']
+        ]
+    }
+    chart_df = pd.DataFrame(chart_data)
+    fig = px.bar(chart_df, x='Metric', y='Value', title=f"{player_select}'s Stats", color='Metric')
+    st.plotly_chart(fig, use_container_width=True)
 
-# --- Tactical Board ---
-elif menu == "Tactical Board":
-    st.subheader("📌 Tactical Board")
-    st.markdown("(Drag-and-drop tactical board simulation coming soon)")
-    st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Football_pitch_metric.svg/2560px-Football_pitch_metric.svg.png", caption="Tactical Pad")
+with tab3:
+    st.subheader("Match Summary")
+    st.write("Upload match performance data or summarize key highlights here.")
+    st.file_uploader("Upload CSV (Match Data)", type="csv")
 
-# --- Video Analysis ---
-elif menu == "Video Analysis":
-    st.subheader("🎥 Video Module")
-    video = st.file_uploader("Upload Match or Training Video")
-    notes = st.text_area("Coach Notes")
-    if video:
-        st.video(video)
-    if notes:
-        st.write("**Coach Notes:**")
-        st.write(notes)
+# Footer
+st.markdown("---")
+st.markdown("© 2025 Wosh FC – From The Streets To The Stars ✨")
+
 
