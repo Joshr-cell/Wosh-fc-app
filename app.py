@@ -2,41 +2,27 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
+# Set page config
 st.set_page_config(page_title="Wosh FC Analyzer", layout="wide")
 
-# Sidebar logo
-st.sidebar.image("A_digital_graphic_features_the_branding_for_WOSH_.png", use_column_width=True)
+# Title
+st.title("Wosh FC Analyzer App")
 
-st.title("🏆 Wosh FC Player Analyzer")
-st.markdown("From the Streets to the Stars — Analyzing Player Data for Impact & Growth.")
+# Sidebar Filters
+st.sidebar.header("Filter Player Data")
 
-# Sample data (replace with real one later)
-data = pd.DataFrame({
-    'Name': ['Sammy', 'Byron', 'Ian', 'Victor'],
-    'Distance Covered (km)': [8.5, 7.2, 9.1, 6.7],
-    'Pass Accuracy (%)': [85, 76, 90, 70],
-    'Shots on Target': [3, 1, 4, 2]
-})
+# Sample player data
+data = {
+    'Name': ['Ian', 'Willy', 'Sammy', 'Branton', 'Samson', 'Pasi', 'Ole', 'Byron', 'Munene', 'Victor', 'Mose', 'Jamo'],
+    'Age': [13, 14, 14, 13, 12, 14, 13, 13, 14, 12, 13, 14],
+    'Position': ['Forward', 'Midfielder', 'Defender', 'Midfielder', 'Goalkeeper', 'Forward', 'Defender', 'Forward', 'Defender', 'Midfielder', 'Midfielder', 'Forward'],
+    'Speed': [7.5, 8.0, 7.2, 6.5, 6.0, 8.5, 7.0, 8.3, 7.4, 6.9, 6.8, 8.1],
+    'Stamina': [8.0, 7.5, 7.2, 6.8, 7.0, 8.2, 7.5, 8.3, 7.0, 6.7, 7.1, 8.0],
+    'Goals': [10, 4, 1, 3, 0, 8, 2, 7, 0, 1, 2, 9]
+}
 
-st.subheader("📊 Team Performance Overview")
-col1, col2 = st.columns(2)
+df = pd.DataFrame(data)
 
-with col1:
-    fig1 = px.bar(data, x='Name', y='Distance Covered (km)', color='Name', title="Distance Covered by Players")
-    st.plotly_chart(fig1, use_container_width=True)
-
-with col2:
-    fig2 = px.pie(data, names='Name', values='Pass Accuracy (%)', title="Pass Accuracy Distribution")
-    st.plotly_chart(fig2, use_container_width=True)
-
-st.subheader("⚽ Individual Stats")
-selected_player = st.selectbox("Select a player", data['Name'])
-
-player_stats = data[data['Name'] == selected_player]
-st.write(player_stats)
-
-st.markdown("---")
-st.markdown("🔍 *Data Powered by Waves of Street Hope*")
 
 
 
