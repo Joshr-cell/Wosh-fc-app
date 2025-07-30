@@ -3,5 +3,5 @@ firebase-admin
 pandas
 matplotlib
 plotly
-
+streamlit-option-menu
 
